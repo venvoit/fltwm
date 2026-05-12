@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flipping Letters - Level Tools</title>
+    <style>
+        body { font-family: sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; background: #f4f4f5; color: #0f172a; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        h2 { margin-top: 0; color: #1e3a8a; display: flex; align-items: center; justify-content: space-between;}
+        h2 span { font-size: 0.9rem; font-weight: normal; background: #e2e8f0; padding: 4px 10px; border-radius: 20px; color: #475569; }
+        label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
+        input[type="date"] { padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; }
+        textarea.input-area { width: 100%; height: 150px; padding: 10px; font-family: monospace; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; resize: vertical; white-space: pre; }
+        .help { font-size: 0.85rem; color: #64748b; margin-top: 5px; margin-bottom: 15px; }
+        button { margin-top: 20px; padding: 14px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s; }
+        button:hover { background: #2563eb; }
+        button.alt-btn { background: #8b5cf6; }
+        button.alt-btn:hover { background: #6d28d9; }
+        .output-area { margin-top: 25px; display: none; }
+        textarea.output-box { width: 100%; height: 300px; font-family: monospace; padding: 10px; font-size: 0.9rem; background: #0f172a; color: #22c55e; border-radius: 6px; border: none; box-sizing: border-box; resize: vertical; white-space: pre; }
+        textarea.decode-box { color: #38bdf8; }
+        .error { color: #dc2626; font-weight: bold; margin-top: 15px; white-space: pre-line; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Bulk Level Builder <span>Encoder</span></h2>
+        
+        <label>Start Date</label>
+        <input type="date" id="startDateInput">
+        <div class="help">The date of the very first puzzle in your list. The tool will automatically add 1 day for every row below.</div>
+
+        <label>Paste Spreadsheet Data</label>
+        <textarea id="bulkInput" class="input-area" placeholder="heart    h, e/a, a, r, t, m/w, d/p, s, l, k&#10;squad    s, b/q, n/u, e/a, d/p, t, i, o, r, l"></textarea>
+        <div class="help">Copy columns A (Word) and B (Bank) directly from Excel/Google Sheets and paste them here.</div>
+
+        <button onclick="generateBulk()">Generate Bulk Code</button>
+        
+        <div id="errorMsg" class="error"></div>
+
+        <div class="output-area" id="outputArea">
+            <label>Copy this directly into the puzzleDatabase { } in your levels.js file:</label>
+            <textarea id="resultText" class="output-box" readonly></textarea>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Level Decoder <span>Decoder</span></h2>
+        
+        <label>Paste Encrypted Line(s)</label>
+        <textarea id="decodeInput" class="input-area" placeholder='Paste full lines from levels.js, or just the scrambled strings:&#10;"2026-05-15": "urneg|u-,e-,n-,ha,rn,g-,zj,p-,s-,v-",&#10;oenaq|od,e-,nr,ha,cq,zj,p-,f-,g-,v-'></textarea>
+        <div class="help">Paste anything in here. The tool will hunt for dates and encrypted strings and decode them for you.</div>
+
+        <button class="alt-btn" onclick="decodeBulk()">Decode Content</button>
+
+        <div class="output-area" id="decodeOutputArea">
+            <label>Decoded Levels:</label>
+            <textarea id="decodeResultText" class="output-box decode-box" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        // ROT13 Cipher (Symmetric: Encodes AND Decodes)
+        const enc = s => s.replace(/[a-z]/gi, c => String.fromCharCode((c <= 'Z' ? 90 : 122) >= (c = c.charCodeAt(0) + 13) ? c : c - 26));
+
+        function generateBulk() {
+            const startDateVal = document.getElementById('startDateInput').value;
+            const rawData = document.getElementById('bulkInput').value.trim();
+            const errorMsg = document.getElementById('errorMsg');
+            const outputArea = document.getElementById('outputArea');
+            const resultText = document.getElementById('resultText');
+            
+            errorMsg.innerText = "";
+            outputArea.style.display = 'none';
+
+            if (!startDateVal) { errorMsg.innerText = "Please select a Start Date."; return; }
+            if (!rawData) { errorMsg.innerText = "Please paste data from your spreadsheet."; return; }
+
+            // Parse the start date safely using local time
+            let currentDate = new Date(startDateVal + "T00:00:00");
+            
+            const lines = rawData.split('\n');
+            let outputLines = [];
+            let errors = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (line.length === 0) continue; 
+
+                let parts = line.split('\t');
+                
+                if (parts.length < 2) {
+                    errors.push(`Row ${i + 1} is missing a Tab space. Make sure you are copying two separate columns.`);
+                    continue;
+                }
+
+                let word = parts[0].trim().toLowerCase();
+                let bankStr = parts[1].trim().toLowerCase();
+
+                if (word.length !== 5) {
+                    errors.push(`Row ${i + 1} ("${word}") must be exactly 5 letters.`);
+                    continue;
+                }
+
+                let bankItems = bankStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                if (bankItems.length !== 10) {
+                    errors.push(`Row ${i + 1} ("${word}") bank must have exactly 10 items. Found ${bankItems.length}.`);
+                    continue;
+                }
+
+                // Format the bank data
+                let formattedBank = bankItems.map(pair => {
+                    let p = pair.split('/');
+                    let char1 = p[0].trim();
+                    let char2 = p.length > 1 ? p[1].trim() : '-';
+                    return char1 + char2;
+                }).join(',');
+
+                // Encrypt
+                let rawString = word + "|" + formattedBank;
+                let encryptedString = enc(rawString);
+
+                // Format the Date
+                let yyyy = currentDate.getFullYear();
+                let mm = String(currentDate.getMonth() + 1).padStart(2, '0');
+                let dd = String(currentDate.getDate()).padStart(2, '0');
+                let dateString = `${yyyy}-${mm}-${dd}`;
+
+                // Create the final line of code
+                outputLines.push(`    "${dateString}": "${encryptedString}",`);
+
+                // Add 1 day
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            if (errors.length > 0) {
+                errorMsg.innerText = "Found errors in your data:\n" + errors.join('\n');
+                return;
+            }
+
+            resultText.value = outputLines.join('\n');
+            outputArea.style.display = 'block';
+        }
+
+        function decodeBulk() {
+            const rawData = document.getElementById('decodeInput').value.trim();
+            const outputArea = document.getElementById('decodeOutputArea');
+            const resultText = document.getElementById('decodeResultText');
+            outputArea.style.display = 'none';
+            if (!rawData) return;
+
+            const lines = rawData.split('\n');
+            let outputLines = [];
+
+            for (let line of lines) {
+                if (!line.trim()) continue;
+
+                // 1. Hunt for a date format (YYYY-MM-DD)
+                let dateMatch = line.match(/"(\d{4}-\d{2}-\d{2})"/);
+                let dateStr = dateMatch ? `[${dateMatch[1]}]` : "[No Date]";
+
+                // 2. Hunt for the obfuscated string (looks for letters with a pipe | character)
+                let payloadMatch = line.match(/([a-zA-Z]+\|[a-zA-Z,\-]+)/);
+                
+                if (payloadMatch) {
+                    // Because ROT13 is symmetric, we just pass the encrypted text back through the encoder!
+                    let decoded = enc(payloadMatch[1]); 
+                    let [word, bank] = decoded.split('|');
+
+                    // Make the bank readable for the spreadsheet again (e.g. u- becomes u, ha becomes h/a)
+                    let readableBank = bank.split(',').map(item => {
+                        if (item.length === 2 && item[1] !== '-') return `${item[0]}/${item[1]}`;
+                        return item[0];
+                    }).join(', ');
+
+                    outputLines.push(`${dateStr} Target: ${word.toUpperCase()} \nBank: ${readableBank}\n`);
+                } else {
+                    outputLines.push(`Could not find a valid encrypted string in line: \n${line}\n`);
+                }
+            }
+
+            resultText.value = outputLines.join('\n');
+            outputArea.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

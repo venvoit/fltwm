@@ -6,6 +6,9 @@ const SHAKE_DELAY_MS = 300;
 const SVG_MOON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
 const SVG_SUN = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
 
+// --- NEW FLIP ICON ---
+const SVG_SPIN = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`;
+
 function getEl(id) { return document.getElementById(id); }
 
 function announce(message) {
@@ -16,7 +19,6 @@ function announce(message) {
     }
 }
 
-// --- Theme Management ---
 function initTheme() {
     const savedTheme = localStorage.getItem('flippingLettersTheme') || 'light';
     const themeBtn = getEl('themeBtn');
@@ -59,7 +61,6 @@ function mulberry32(a) {
     }
 }
 
-// --- STRICTER LOCALSTORAGE VALIDATION ---
 const defaultStats = { played: 0, wins: 0, currentStreak: 0, maxStreak: 0, distribution: Array(MAX_GUESSES).fill(0), lastCompletedDay: -1 };
 
 function validateStats(stats) {
@@ -102,7 +103,6 @@ function updateStats(won) {
     saveStats();
 }
 
-// --- FIX: NO innerHTML USED HERE ---
 function renderStatsModal() {
     if(!getEl('statPlayed')) return;
     getEl('statPlayed').innerText = userStats.played;
@@ -111,7 +111,8 @@ function renderStatsModal() {
     getEl('statMax').innerText = userStats.maxStreak;
 
     const chartContainer = getEl('distChart');
-    chartContainer.innerHTML = ''; // Safe to clear empty div
+    if (!chartContainer) return;
+    chartContainer.innerHTML = ''; 
 
     const maxDist = Math.max(...userStats.distribution, 1); 
     
@@ -264,8 +265,10 @@ function initDOM() {
             charBack.innerText = item.flipChar; 
             charContainer.appendChild(charBack);
 
+            // --- INJECTING THE NEW FLIP ICON ---
             const flipBtn = document.createElement('button');
-            flipBtn.className = 'flip-btn'; flipBtn.innerHTML = '↻';
+            flipBtn.className = 'flip-btn'; 
+            flipBtn.innerHTML = SVG_SPIN;
             flipBtn.setAttribute('aria-label', `Spin letter ${item.char} to ${item.flipChar}`);
             flipBtn.addEventListener('click', (e) => { e.stopPropagation(); handleFlip(index); });
             tile.appendChild(flipBtn);
@@ -511,7 +514,7 @@ function triggerFireworks() {
 
         for (let b = 0; b < 3; b++) {
             setTimeout(() => {
-                const originX = canvas.width / 2 + (Math.random() - 0.5) * 300;
+                        const originX = canvas.width / 2 + (Math.random() - 0.5) * 300;
                 const originY = canvas.height / 3 + (Math.random() - 0.5) * 200;
                 for (let i = 0; i < 180; i++) {
                     particles.push({
@@ -549,6 +552,22 @@ function triggerFireworks() {
     }, 500); 
 }
 
+function copyToClipboard(text) { 
+    navigator.clipboard.writeText(text).then(() => {
+        const shareBtn = getEl('shareBtn');
+        if (shareBtn) {
+            const originalText = shareBtn.innerHTML;
+            shareBtn.innerHTML = "Copied!";
+            announce("Copied to clipboard"); 
+            setTimeout(() => { 
+                shareBtn.innerHTML = originalText; 
+            }, 2000);
+        }
+    }).catch(err => {
+        alert("Failed to copy results to clipboard.");
+    }); 
+}
+
 async function handleShare() {
     const attemptStr = state.status === "WON" ? state.currentRow + 1 : 'X';
     let shareText = `Flipping Letters #${state.puzzleNumber} ${attemptStr}/${MAX_GUESSES}\n\n`;
@@ -574,8 +593,7 @@ async function handleShare() {
     } else { copyToClipboard(shareText); }
 }
 
-function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => showMessage("Copied to clipboard!")).catch(err => showMessage("Failed to copy")); }
-
+// --- RESTORED DEV EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
 
     initTheme();
@@ -642,7 +660,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === "Enter") handleSubmit();
     });
 
-    // Start Game
     (async () => {
         await loadLocalDictionary(); 
         initGame();

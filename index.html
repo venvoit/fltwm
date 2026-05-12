@@ -4,40 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>Flipping Letters - The Daily Word Puzzle Game</title>
-    <meta name="description" content="Play Flipping Letters! Guess the daily 5-letter word using only the provided tiles. Spin the letters 180° to reveal hidden clues. A new brain teaser every day!">
-    <meta name="keywords" content="word game, puzzle game, daily puzzle, wordle alternative, brain teaser, letter flip game">
-    <link rel="canonical" href="https://flippingletters.com" />
+    <title>Flipping Letters - DEV BRANCH</title>
+    <meta name="robots" content="noindex, nofollow"> <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ea580c'/%3E%3Cpath d='M35 30 A30 30 0 0 1 80 50' fill='none' stroke='%23ffffff' stroke-width='12' stroke-linecap='round'/%3E%3Cpolygon points='70,65 80,45 90,65' fill='%23ffffff'/%3E%3Cpath d='M65 70 A30 30 0 0 1 20 50' fill='none' stroke='%23ffffff' stroke-width='12' stroke-linecap='round'/%3E%3Cpolygon points='10,35 20,55 30,35' fill='%23ffffff'/%3E%3C/svg%3E">
 
-    <meta property="og:title" content="Flipping Letters - The Daily Word Puzzle Game">
-    <meta property="og:description" content="Guess the word, spin the tiles, and reveal hidden letters. Can you solve today's puzzle?">
-    <meta property="og:url" content="https://flippingletters.com">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="https://flippingletters.com/social-preview.jpg">
-
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Flipping Letters">
-    <meta name="twitter:description" content="Guess the word, spin the tiles, and reveal hidden letters. Can you solve today's puzzle?">
-    <meta name="twitter:image" content="https://flippingletters.com/social-preview.jpg">
-
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "VideoGame",
-      "name": "Flipping Letters",
-      "url": "https://flippingletters.com",
-      "genre": "Puzzle",
-      "playMode": "SinglePlayer",
-      "applicationCategory": "BrowserGame",
-      "operatingSystem": "Web Browser",
-      "description": "A daily 5-letter word puzzle game where players spin tiles 180 degrees to reveal hidden letters and solve the board."
-    }
-    </script>
-
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ea580c'/%3E%3Cpath d='M35 30 A30 30 0 0 1 80 50' fill='none' stroke='%23ffffff' stroke-width='12' stroke-linecap='round'/%3E%3Cpolygon points='70,65 80,45 90,65' fill='%23ffffff'/%3E%3Cpath d='M65 70 A30 30 0 0 1 20 50' fill='none' stroke='%23ffffff' stroke-width='12' stroke-linecap='round'/%3E%3Cpolygon points='10,35 20,55 30,35' fill='%23ffffff'/%3E%3C/svg%3E">
-
-    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b1684510c87a47e8bfab5cf88bd17669"}'></script>
-    
     <script src="levels.js" defer></script>
     <script src="app.js" defer></script>
 
@@ -192,14 +161,19 @@
         }
         #bank { display: grid; grid-template-columns: repeat(5, 55px); grid-template-rows: repeat(2, 55px); gap: 10px; justify-content: center; }
 
+        /* --- UPDATED FLIP BUTTON UI --- */
         .flip-btn {
-            position: absolute; top: -5px; right: -5px; background: var(--tile-bg); border: 2px solid var(--active-border);
-            color: var(--active-border); font-size: 1rem; font-weight: bold; cursor: pointer; padding: 0; line-height: 1;
-            border-radius: 50%; transition: all 0.2s; width: 24px; height: 24px; display: flex;
-            justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 2;
-            font-family: sans-serif; touch-action: manipulation;
+            position: absolute; top: -8px; right: -8px; 
+            background: var(--active-border); color: #ffffff; 
+            border: 3px solid var(--tile-bg); /* Creates the cutout effect */
+            border-radius: 50%; cursor: pointer; padding: 0; line-height: 0;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 2; touch-action: manipulation;
         }
-        .flip-btn:hover { color: var(--tile-bg); background: var(--active-border); transform: scale(1.15) rotate(90deg); }
+        .flip-btn:hover { background: var(--accent-color); transform: scale(1.15) rotate(180deg); }
+        .flip-btn svg { width: 16px; height: 16px; }
+        /* ------------------------------ */
 
         .controls { display: flex; gap: 12px; width: 100%; max-width: 340px; justify-content: center; position: relative; z-index: 10;}
         button.action-btn {
@@ -236,17 +210,7 @@
         }
         @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-        #bannerAd {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%); color: white; text-decoration: none;
-            padding: 12px 20px; box-sizing: border-box; display: flex; justify-content: center; align-items: center;
-            z-index: 9000; box-shadow: 0 -4px 15px rgba(0,0,0,0.2); border-top: 1px solid #60a5fa; touch-action: manipulation;
-        }
-        .banner-content { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 450px; gap: 15px; }
-        .banner-img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .banner-text { font-size: 1rem; font-family: 'Nunito', sans-serif; font-weight: 700; line-height: 1.2; flex-grow: 1; }
-        .banner-cta { background: var(--accent-color); color: #0f172a; padding: 8px 16px; border-radius: 8px; font-weight: 900; font-size: 1.1rem; font-family: var(--app-font); text-transform: uppercase; box-shadow: 0 3px 0 #b45309; white-space: nowrap; }
-
+        /* DEV TOOLS CSS Restored */
         .settings-btn {
             position: fixed; bottom: 80px; right: 15px; background: var(--board-bg); color: var(--text-muted);
             border: 1px solid var(--tile-border); border-radius: 50%; width: 40px; height: 40px; font-size: 1.4rem; 
@@ -262,8 +226,7 @@
         .debug-container h3 { margin: 0; font-size: 1.2rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-family: 'Nunito', sans-serif;}
         .debug-controls { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap;}
         .debug-btn, input[type="date"] { background: var(--tile-bg); border: 1px solid var(--tile-border); color: var(--text-color); padding: 8px 12px; font-size: 1.2rem; border-radius: 6px; cursor: pointer; font-family: var(--app-font); outline: none; font-weight: 700; }
-        
-        /* Modals */
+
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(5px); }
         .modal-content { background: var(--modal-bg); padding: 40px 30px; border-radius: 20px; border: 2px solid var(--modal-border); max-width: 400px; width: 90%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3); box-sizing: border-box; }
         .modal-content h2 { margin-top: 0; color: var(--text-color); font-size: 2.5rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; margin-bottom: 20px;}
@@ -281,7 +244,6 @@
         .close-modal-btn:active { transform: translateY(5px); box-shadow: 0 0 0 #15803d; }
         .hidden { display: none !important; }
 
-        /* Stats UI */
         .stats-grid { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; }
         .stat-box { display: flex; flex-direction: column; align-items: center; }
         .stat-num { font-size: 2.5rem; font-weight: 900; color: var(--text-color); line-height: 1; }
@@ -366,14 +328,6 @@
         </div>
         <span id="debugWord"></span>
     </div>
-
-    <a href="https://twowords2.page.link/play" target="_blank" rel="noopener noreferrer" id="bannerAd" aria-label="Play Two Words with Susie Dent">
-        <div class="banner-content">
-            <img src="susie.webp" alt="" class="banner-img" onerror="this.style.display='none'" aria-hidden="true">
-            <span class="banner-text">Play <strong>Two Words</strong><br>with Susie Dent!</span>
-            <span class="banner-cta">Play Now</span>
-        </div>
-    </a>
 
 </body>
 </html>

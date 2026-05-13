@@ -79,7 +79,7 @@ const puzzleDatabase = {
     "2026-07-17": "gvtre|qc,do,t-,l-,v-,m-,i-,nr,e-,g-",
     "2026-07-18": "jvapr|k-,p-,jz,u-,b-,m-,ha,cq,v-,nr",
     "2026-07-19": "oyhfu|ah,p-,do,e-,y-,l-,qc,f-,u-,v-",
-    "2026-07-20": "nzore|ha,cq,e-,b-,do,rn,p-,e-,jz,y-",
+    "2026-07-20": "nzore|ha,cq,f-,b-,do,rn,p-,e-,jz,y-",
     "2026-07-21": "nybsg|t-,do,g-,y-,s-,nr,b-,x-,e-,ha",
     "2026-07-22": "fgneg|s-,m-,e-,t-,cq,g-,ha,nr,x-,f-",
     "2026-07-23": "gubfr|e-,rn,m-,b-,g-,od,p-,f-,u-,jz",

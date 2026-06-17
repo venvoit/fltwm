@@ -4,9 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <title>Flipping Letters - DEV BRANCH</title>
-    <meta name="robots" content="noindex, nofollow"> <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ea580c'/%3E%3Cpath d='M35 30 A30 30 0 0 1 80 50' fill='none' stroke='%23ffffff' stroke-width='12' stroke-linecap='round'/%3E%3Cpolygon points='70,65 80,45 90,65' fill='%23ffffff'/%3E%3Cpath d='M65 70 A30 30 0 0 1 20 50' fill='none' stroke='%23ffffff' stroke-width='12' stroke-linecap='round'/%3E%3Cpolygon points='10,35 20,55 30,35' fill='%23ffffff'/%3E%3C/svg%3E">
+    <title>Flipping Letters - The Daily Word Puzzle Game</title>
+    <meta name="description" content="Play Flipping Letters! Guess the daily 5-letter word using only the provided tiles. Spin the letters 180° to reveal hidden clues. A new brain teaser every day!">
+    <meta name="keywords" content="word game, puzzle game, daily puzzle, wordle alternative, brain teaser, letter flip game">
+    <link rel="canonical" href="https://flippingletters.com" />
 
+    <meta property="og:title" content="Flipping Letters - The Daily Word Puzzle Game">
+    <meta property="og:description" content="Guess the word, spin the tiles, and reveal hidden letters. Can you solve today's puzzle?">
+    <meta property="og:url" content="https://flippingletters.com">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://flippingletters.com/social-preview.jpg">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Flipping Letters">
+    <meta name="twitter:description" content="Guess the word, spin the tiles, and reveal hidden letters. Can you solve today's puzzle?">
+    <meta name="twitter:image" content="https://flippingletters.com/social-preview.jpg">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoGame",
+      "name": "Flipping Letters",
+      "url": "https://flippingletters.com",
+      "genre": "Puzzle",
+      "playMode": "SinglePlayer",
+      "applicationCategory": "BrowserGame",
+      "operatingSystem": "Web Browser",
+      "description": "A daily 5-letter word puzzle game where players spin tiles 180 degrees to reveal hidden letters and solve the board."
+    }
+    </script>
+
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23ea580c'/%3E%3Cpath d='M35 30 A30 30 0 0 1 80 50' fill='none' stroke='%23ffffff' stroke-width='12' stroke-linecap='round'/%3E%3Cpolygon points='70,65 80,45 90,65' fill='%23ffffff'/%3E%3Cpath d='M65 70 A30 30 0 0 1 20 50' fill='none' stroke='%23ffffff' stroke-width='12' stroke-linecap='round'/%3E%3Cpolygon points='10,35 20,55 30,35' fill='%23ffffff'/%3E%3C/svg%3E">
+
+    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b1684510c87a47e8bfab5cf88bd17669"}'></script>
+    
     <script src="levels.js" defer></script>
     <script src="app.js" defer></script>
 
@@ -17,7 +48,6 @@
     
     <style>
         :root {
-            /* LIGHT MODE (Default) */
             --app-font: 'Tourney', sans-serif;
             --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             --board-bg: rgba(255, 255, 255, 0.6);
@@ -33,12 +63,14 @@
             --correct: #22c55e;
             --present: #eab308;
             --absent: #64748b;
+            --correct-shadow: #15803d;
+            --present-shadow: #a16207;
+            --absent-shadow: #334155;
             --modal-bg: linear-gradient(180deg, #ffffff, #f1f5f9);
             --modal-border: #cbd5e1;
         }
 
         body.dark-theme {
-            /* DARK MODE */
             --bg-gradient: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
             --board-bg: rgba(255, 255, 255, 0.08);
             --bank-bg: rgba(0, 0, 0, 0.2);
@@ -53,6 +85,9 @@
             --correct: #22c55e;
             --present: #eab308;
             --absent: #64748b;
+            --correct-shadow: #14532d;
+            --present-shadow: #713f12;
+            --absent-shadow: #1e293b;
             --modal-bg: linear-gradient(180deg, #1e293b, #0f172a);
             --modal-border: #334155;
         }
@@ -66,7 +101,6 @@
             min-height: 100vh; user-select: none; box-sizing: border-box; transition: all 0.3s ease; overflow-x: hidden; touch-action: manipulation;
         }
 
-        /* Absolutely positioned corner buttons */
         .top-left-btn { position: absolute; top: 12px; left: 12px; z-index: 100; display: flex; gap: 10px; }
         .top-right-btn { position: absolute; top: 12px; right: 12px; z-index: 100; }
         
@@ -80,7 +114,6 @@
         
         @media (hover: hover) { .icon-btn:hover { opacity: 1; transform: scale(1.1); } }
         .icon-btn:active { opacity: 1; transform: scale(1.1); }
-        
         .icon-btn svg { width: 28px; height: 28px; }
 
         .visual-title { margin: 45px 0 5px 0; font-size: 2.2rem; font-weight: 900; text-shadow: 0 2px 4px rgba(0,0,0,0.1); text-transform: lowercase; text-align: center; line-height: 1.1; font-family: var(--app-font); }
@@ -137,6 +170,21 @@
         .bank-tile:active { transform: translateY(4px); box-shadow: 0 0 0 var(--tile-shadow); }
 
         @media (hover: hover) { .bank-tile:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--tile-shadow); } }
+
+        /* NEW: Colored Bank Tile Statuses with matching 3D shadows */
+        .bank-tile.correct { background-color: var(--correct) !important; color: white !important; box-shadow: 0 4px 0 var(--correct-shadow) !important; }
+        .bank-tile.present { background-color: var(--present) !important; color: white !important; box-shadow: 0 4px 0 var(--present-shadow) !important; }
+        .bank-tile.absent { background-color: var(--absent) !important; color: white !important; box-shadow: 0 4px 0 var(--absent-shadow) !important; opacity: 0.8 !important;}
+        
+        .bank-tile.correct:active { box-shadow: 0 0 0 var(--correct-shadow) !important; transform: translateY(4px); }
+        .bank-tile.present:active { box-shadow: 0 0 0 var(--present-shadow) !important; transform: translateY(4px); }
+        .bank-tile.absent:active { box-shadow: 0 0 0 var(--absent-shadow) !important; transform: translateY(4px); }
+
+        @media (hover: hover) { 
+            .bank-tile.correct:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--correct-shadow) !important; } 
+            .bank-tile.present:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--present-shadow) !important; } 
+            .bank-tile.absent:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--absent-shadow) !important; } 
+        }
 
         .char-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
         .char-front, .char-back { position: absolute; line-height: 1; margin-top: 5px; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0s 0.2s; }
@@ -253,23 +301,6 @@
         .dist-label { width: 15px; color: var(--text-color); }
         .dist-bar { background: var(--absent); height: 22px; min-width: 20px; display: flex; align-items: center; justify-content: flex-end; padding: 0 8px; border-radius: 4px; box-sizing: border-box; }
         .dist-bar.highlight { background: var(--correct); }
-
-        /* DEV TOOLS CSS Restored */
-        .settings-btn {
-            position: fixed; bottom: 80px; right: 15px; background: var(--board-bg); color: var(--text-muted);
-            border: 1px solid var(--tile-border); border-radius: 50%; width: 40px; height: 40px; font-size: 1.4rem; 
-            display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 100; transition: all 0.2s; touch-action: manipulation;
-        }
-        .settings-btn:hover { color: var(--text-color); transform: rotate(90deg); }
-
-        .debug-container { 
-            display: none; margin-top: 20px; padding: 15px; border: 1px dashed var(--tile-border); 
-            border-radius: 12px; text-align: center; background-color: var(--board-bg); 
-            flex-direction: column; gap: 10px; align-items: center; position: relative; z-index: 10;
-        }
-        .debug-container h3 { margin: 0; font-size: 1.2rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-family: 'Nunito', sans-serif;}
-        .debug-controls { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap;}
-        .debug-btn, input[type="date"] { background: var(--tile-bg); border: 1px solid var(--tile-border); color: var(--text-color); padding: 8px 12px; font-size: 1.2rem; border-radius: 6px; cursor: pointer; font-family: var(--app-font); outline: none; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -287,7 +318,6 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
         </a>
     </div>
-    
     <button id="themeBtn" class="icon-btn top-right-btn" aria-label="Toggle Theme"></button>
 
     <div id="tutorialModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
@@ -342,18 +372,6 @@
     </div>
 
     <div id="message" role="status"></div>
-
-    <button id="settingsBtn" class="settings-btn" aria-label="Developer Settings">⚙️</button>
-
-    <div class="debug-container" id="debugContainer">
-        <h3>Developer Options</h3>
-        <div class="debug-controls">
-            <input type="date" id="datePicker" aria-label="Jump to Date">
-            <button id="debugBtn" class="debug-btn">Reveal Target</button>
-            <button id="resetStatsBtn" class="debug-btn" style="color:var(--f43f5e);">Reset Stats</button>
-        </div>
-        <span id="debugWord"></span>
-    </div>
 
     <a href="https://twowords2.page.link/play" target="_blank" rel="noopener noreferrer" id="bannerAd" aria-label="Play Two Words with Susie Dent">
         <div class="banner-content">

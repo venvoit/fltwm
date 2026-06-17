@@ -146,7 +146,6 @@ const state = {
     board: Array.from({length: MAX_GUESSES}, () => []), bank: [] 
 };
 
-// --- NEW FUNCTION: Saves the exact state of the board locally ---
 function saveGameState() {
     const stateToSave = {
         puzzleNumber: state.puzzleNumber,
@@ -156,6 +155,40 @@ function saveGameState() {
         bank: state.bank
     };
     localStorage.setItem('flippingLettersState', JSON.stringify(stateToSave));
+}
+
+// Function to safely update individual bank statuses across the whole board
+function updateBankStatusForChar(char, status) {
+    const getWeight = (st) => {
+        if (st === 'correct') return 3;
+        if (st === 'present') return 2;
+        if (st === 'absent') return 1;
+        return 0;
+    };
+    const newWeight = getWeight(status);
+
+    state.bank.forEach(item => {
+        if (item.char === char) {
+            if (newWeight > getWeight(item.charStatus)) item.charStatus = status;
+        }
+        if (item.flipChar === char) {
+            if (newWeight > getWeight(item.flipCharStatus)) item.flipCharStatus = status;
+        }
+    });
+}
+
+// Self-healing function for loaded games to correctly paint the letters
+function restoreBankStatuses() {
+    state.bank.forEach(item => { item.charStatus = 'tbd'; item.flipCharStatus = 'tbd'; });
+    for (let r = 0; r <= state.currentRow; r++) {
+        if (r >= MAX_GUESSES) break;
+        const row = state.board[r];
+        if (row.length === WORD_LENGTH && row[0].status !== 'tbd') {
+            for (let i = 0; i < WORD_LENGTH; i++) {
+                updateBankStatusForChar(row[i].logicalChar, row[i].status);
+            }
+        }
+    }
 }
 
 function initGame() {
@@ -180,11 +213,17 @@ function initGame() {
     const dec = s => s.replace(/[a-z]/gi, c => String.fromCharCode((c <= 'Z' ? 90 : 122) >= (c = c.charCodeAt(0) + 13) ? c : c - 26));
     const decoded = dec(encryptedString);
     const [word, bankStr] = decoded.split('|');
-    const rawBankItems = bankStr.split(',').map(pair => ({ char: pair[0], flipChar: pair[1] === '-' ? null : pair[1], isFlipped: false }));
+    
+    const rawBankItems = bankStr.split(',').map(pair => ({ 
+        char: pair[0], 
+        flipChar: pair[1] === '-' ? null : pair[1], 
+        isFlipped: false,
+        charStatus: 'tbd',
+        flipCharStatus: 'tbd'
+    }));
 
     validWords.add(word); 
 
-    // Update this to your actual Launch Date!
     const launchDate = new Date(Date.UTC(2026, 3, 27)); 
     const currentTargetDate = new Date(targetDateStr);
     let diffDays = Math.floor((currentTargetDate - launchDate) / (1000 * 60 * 60 * 24));
@@ -192,21 +231,23 @@ function initGame() {
     state.puzzleNumber = diffDays + 1;
     state.targetWord = word;
     
-    // --- NEW LOGIC: Try to load existing Game State for today ---
     let savedState = null;
     try {
         let stored = localStorage.getItem('flippingLettersState');
         if (stored) savedState = JSON.parse(stored);
     } catch(e) {}
 
-    // Check if the saved state is from today's puzzle
     if (savedState && savedState.puzzleNumber === state.puzzleNumber) {
         state.status = savedState.status;
         state.currentRow = savedState.currentRow;
         state.board = savedState.board;
-        state.bank = savedState.bank;
+        state.bank = savedState.bank.map(item => ({
+            ...item,
+            charStatus: item.charStatus || 'tbd',
+            flipCharStatus: item.flipCharStatus || 'tbd'
+        }));
+        restoreBankStatuses();
     } else {
-        // If it's a new day, initialize a fresh board
         state.status = "PLAYING";
         state.currentRow = 0;
         state.board = Array.from({length: MAX_GUESSES}, () => []);
@@ -218,10 +259,9 @@ function initGame() {
             [rawBank[i], rawBank[j]] = [rawBank[j], rawBank[i]];
         }
         state.bank = rawBank;
-        saveGameState(); // Save the fresh board
+        saveGameState(); 
     }
 
-    // Standard DOM Setup
     if(getEl('bank-container')) getEl('bank-container').style.display = 'block'; 
     if(getEl('endMessage')) getEl('endMessage').style.display = 'none';
     if(getEl('message')) { getEl('message').style.display = 'block'; getEl('message').innerText = ""; }
@@ -240,7 +280,6 @@ function initGame() {
     initDOM(); 
     render();
 
-    // --- NEW LOGIC: If loaded state is already Won/Lost, show End Screen immediately ---
     if (state.status !== "PLAYING") {
         document.body.style.pointerEvents = 'auto';
         if(getEl('bank-container')) getEl('bank-container').style.display = 'none';
@@ -318,9 +357,38 @@ function initDOM() {
         tile.addEventListener('click', () => handleAddLetter(index));
         tile.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleAddLetter(index); }
+            if (e.key === 'Shift' || e.key === 'Control') {
+                e.preventDefault();
+                if (item.flipChar) handleFlip(index);
+            }
         });
 
         bankEl.appendChild(tile);
+    });
+}
+
+function renderBank() {
+    state.bank.forEach((item, index) => {
+        const tileEl = getEl(`bank-tile-${index}`);
+        if(!tileEl) return;
+
+        item.isFlipped ? tileEl.classList.add('flipped') : tileEl.classList.remove('flipped');
+        
+        // Apply status class ONLY for the currently visible face
+        tileEl.classList.remove('correct', 'present', 'absent');
+        const currentStatus = item.isFlipped ? item.flipCharStatus : item.charStatus;
+        
+        if (currentStatus && currentStatus !== 'tbd') {
+            tileEl.classList.add(currentStatus);
+        }
+        
+        let currentVisibleChar = item.isFlipped ? item.flipChar : item.char;
+        let flipContext = "";
+        if (item.flipChar) {
+            let hiddenChar = item.isFlipped ? item.char : item.flipChar;
+            flipContext = `, can be spun to ${hiddenChar}`;
+        }
+        tileEl.setAttribute('aria-label', `Bank letter ${currentVisibleChar}${flipContext}`);
     });
 }
 
@@ -360,21 +428,7 @@ function render() {
             }
         }
     }
-
-    state.bank.forEach((item, index) => {
-        const tileEl = getEl(`bank-tile-${index}`);
-        if(!tileEl) return;
-
-        item.isFlipped ? tileEl.classList.add('flipped') : tileEl.classList.remove('flipped');
-        
-        let currentVisibleChar = item.isFlipped ? item.flipChar : item.char;
-        let flipContext = "";
-        if (item.flipChar) {
-            let hiddenChar = item.isFlipped ? item.char : item.flipChar;
-            flipContext = `, can be spun to ${hiddenChar}`;
-        }
-        tileEl.setAttribute('aria-label', `Bank letter ${currentVisibleChar}${flipContext}`);
-    });
+    renderBank();
 }
 
 function showMessage(msg) {
@@ -402,7 +456,7 @@ function handleAddLetter(index) {
         status: 'tbd'
     });
     
-    saveGameState(); // Save State
+    saveGameState(); 
     announce(`Added ${charToAdd}`); 
     render();
 }
@@ -410,16 +464,16 @@ function handleAddLetter(index) {
 function handleFlip(index) {
     if (state.status !== "PLAYING") return;
     state.bank[index].isFlipped = !state.bank[index].isFlipped;
-    saveGameState(); // Save State
+    saveGameState(); 
     const newChar = state.bank[index].isFlipped ? state.bank[index].flipChar : state.bank[index].char;
     announce(`Spun to ${newChar}`); 
-    render();
+    renderBank(); // Only re-render bank to handle color changes and transforms
 }
 
 function handleBackspace() {
     if (state.status !== "PLAYING" || state.board[state.currentRow].length === 0) return;
     const removedChar = state.board[state.currentRow].pop().logicalChar;
-    saveGameState(); // Save State
+    saveGameState(); 
     announce(`Deleted ${removedChar}`); 
     render();
 }
@@ -463,14 +517,13 @@ function handleSubmit() {
         }
     }
 
-    // Evaluate Win/Loss immediately to secure the local storage save before animations
     let isWon = (guessString === state.targetWord);
     let isLost = (!isWon && state.currentRow >= MAX_GUESSES - 1);
     
     if (isWon) state.status = "WON";
     else if (isLost) state.status = "LOST";
     
-    saveGameState(); // Securely save the row statuses and game outcome
+    saveGameState(); 
 
     const rowEl = getEl(`row-${state.currentRow}`);
     if(rowEl) {
@@ -479,6 +532,11 @@ function handleSubmit() {
                 const tileEl = rowEl.children[i];
                 tileEl.classList.remove('filled', 'active-row');
                 tileEl.classList.add(currentRowData[i].status);
+                
+                // Update the bank tile color perfectly synced with the board reveal
+                updateBankStatusForChar(currentRowData[i].logicalChar, currentRowData[i].status);
+                renderBank();
+                
             }, i * ANIMATION_DELAY_MS);
         }
     }
@@ -491,6 +549,9 @@ function handleSubmit() {
 
     setTimeout(() => {
         announce(resultAnnouncement); 
+        
+        // Save state one final time so winning/losing states have their final colored banks saved!
+        saveGameState();
 
         if (isWon) {
             handleEndGame(true);
@@ -498,7 +559,7 @@ function handleSubmit() {
             handleEndGame(false);
         } else {
             state.currentRow++; 
-            saveGameState(); // Increment row and save again
+            saveGameState(); 
             unlockInput(); 
             render(); 
         }
@@ -674,6 +735,45 @@ document.addEventListener('DOMContentLoaded', () => {
         getEl('tutorialModal').classList.add('hidden'); 
     });
 
+    // DEV MENU LOGIC
+    if(getEl('devMenuBtn')) {
+        getEl('devMenuBtn').addEventListener('click', () => {
+            getEl('devModal').classList.remove('hidden');
+        });
+    }
+
+    if(getEl('closeDevBtn')) {
+        getEl('closeDevBtn').addEventListener('click', () => {
+            getEl('devModal').classList.add('hidden');
+        });
+    }
+
+    if(getEl('devResetDayBtn')) {
+        getEl('devResetDayBtn').addEventListener('click', () => {
+            localStorage.removeItem('flippingLettersState');
+            if (userStats.lastCompletedDay === state.puzzleNumber) {
+                userStats.lastCompletedDay = -1;
+                userStats.played = Math.max(0, userStats.played - 1);
+                if (state.status === "WON") {
+                    userStats.wins = Math.max(0, userStats.wins - 1);
+                    userStats.currentStreak = Math.max(0, userStats.currentStreak - 1);
+                    if (userStats.distribution[state.currentRow] > 0) userStats.distribution[state.currentRow]--;
+                }
+                saveStats();
+            }
+            location.reload();
+        });
+    }
+
+    if(getEl('devClearStatsBtn')) {
+        getEl('devClearStatsBtn').addEventListener('click', () => {
+            localStorage.removeItem('flippingLettersStats');
+            localStorage.removeItem('flippingLettersState');
+            location.reload();
+        });
+    }
+
+    // KEYBOARD LISTENER
     document.addEventListener("keydown", (e) => {
         if(e.target.tagName === 'INPUT') return;
 
@@ -683,11 +783,33 @@ document.addEventListener('DOMContentLoaded', () => {
         if (getEl('statsModal') && !getEl('statsModal').classList.contains('hidden')) {
             if (e.key === "Enter" || e.key === "Escape") getEl('closeStatsBtn').click(); return;
         }
+        if (getEl('devModal') && !getEl('devModal').classList.contains('hidden')) {
+            if (e.key === "Enter" || e.key === "Escape") getEl('closeDevBtn').click(); return;
+        }
+        
         if (e.key === "Backspace") handleBackspace();
         if (e.key === "Enter") handleSubmit();
+
+        if (['1', '2', '3', '4', '5'].includes(e.key)) {
+            const index = parseInt(e.key) - 1; 
+            if (state.status === "PLAYING" && state.bank[index] && state.bank[index].flipChar) {
+                handleFlip(index);
+            }
+        }
+        
+        if (/^[a-zA-Z]$/.test(e.key) && state.status === "PLAYING") {
+            const typedChar = e.key.toLowerCase();
+            const availableIndex = state.bank.findIndex((item) => {
+                const visibleChar = item.isFlipped ? item.flipChar : item.char;
+                return visibleChar === typedChar; 
+            });
+
+            if (availableIndex !== -1) {
+                handleAddLetter(availableIndex); 
+            }
+        }
     });
 
-    // Start Game
     (async () => {
         await loadLocalDictionary(); 
         initGame();

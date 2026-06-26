@@ -467,7 +467,7 @@ function handleFlip(index) {
     saveGameState(); 
     const newChar = state.bank[index].isFlipped ? state.bank[index].flipChar : state.bank[index].char;
     announce(`Spun to ${newChar}`); 
-    renderBank(); // Only re-render bank to handle color changes and transforms
+    renderBank(); 
 }
 
 function handleBackspace() {
@@ -533,7 +533,6 @@ function handleSubmit() {
                 tileEl.classList.remove('filled', 'active-row');
                 tileEl.classList.add(currentRowData[i].status);
                 
-                // Update the bank tile color perfectly synced with the board reveal
                 updateBankStatusForChar(currentRowData[i].logicalChar, currentRowData[i].status);
                 renderBank();
                 
@@ -550,7 +549,6 @@ function handleSubmit() {
     setTimeout(() => {
         announce(resultAnnouncement); 
         
-        // Save state one final time so winning/losing states have their final colored banks saved!
         saveGameState();
 
         if (isWon) {
@@ -735,7 +733,6 @@ document.addEventListener('DOMContentLoaded', () => {
         getEl('tutorialModal').classList.add('hidden'); 
     });
 
-    // DEV MENU LOGIC
     if(getEl('devMenuBtn')) {
         getEl('devMenuBtn').addEventListener('click', () => {
             getEl('devModal').classList.remove('hidden');
@@ -773,7 +770,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // KEYBOARD LISTENER
     document.addEventListener("keydown", (e) => {
         if(e.target.tagName === 'INPUT') return;
 
@@ -797,15 +793,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
+        // --- UPGRADED: Smart Keyboard Typing Logic ---
         if (/^[a-zA-Z]$/.test(e.key) && state.status === "PLAYING") {
             const typedChar = e.key.toLowerCase();
-            const availableIndex = state.bank.findIndex((item) => {
+            
+            // Priority 1: Check if any tile is ALREADY showing the typed letter
+            let targetIndex = state.bank.findIndex((item) => {
                 const visibleChar = item.isFlipped ? item.flipChar : item.char;
                 return visibleChar === typedChar; 
             });
 
-            if (availableIndex !== -1) {
-                handleAddLetter(availableIndex); 
+            // Priority 2: If not found, check if it's hiding on the back of a flippable tile
+            if (targetIndex === -1) {
+                targetIndex = state.bank.findIndex((item) => {
+                    const hiddenChar = item.isFlipped ? item.char : item.flipChar;
+                    return hiddenChar === typedChar;
+                });
+                
+                // If we found it on the back, flip the tile for the user automatically!
+                if (targetIndex !== -1) {
+                    state.bank[targetIndex].isFlipped = !state.bank[targetIndex].isFlipped;
+                    saveGameState();
+                }
+            }
+
+            // Finally, if we found it (either already showing or just flipped), add it to the board
+            if (targetIndex !== -1) {
+                handleAddLetter(targetIndex); 
             }
         }
     });

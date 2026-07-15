@@ -39,7 +39,7 @@
     <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b1684510c87a47e8bfab5cf88bd17669"}'></script>
     
     <script src="levels.js" defer></script>
-    <script src="app.js" defer></script>
+    <script src="app.js?v=4" defer></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Tourney:wght@700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Monomaniac+One&display=swap" rel="stylesheet">
@@ -319,21 +319,7 @@
         </a>
     </div>
     
-    <div class="top-right-btn">
-        <button id="devMenuBtn" class="icon-btn" aria-label="Dev Menu" style="opacity: 0.15;">
-            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="6" width="8" height="14" rx="4"></rect><path d="M12 2v4"></path><path d="M6 10h2"></path><path d="M16 10h2"></path><path d="M6 14h2"></path><path d="M16 14h2"></path><path d="M6 18h2"></path><path d="M16 18h2"></path></svg>
-        </button>
-        <button id="themeBtn" class="icon-btn" aria-label="Toggle Theme"></button>
-    </div>
-
-    <div id="devModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="devTitle">
-        <div class="modal-content">
-            <h2 id="devTitle">Dev Menu</h2>
-            <button class="action-btn" id="devResetDayBtn" style="margin-bottom: 15px; width: 100%;">Reset Today's Game</button>
-            <button class="action-btn backspace" id="devClearStatsBtn" style="margin-bottom: 25px; width: 100%;">Clear All Local Stats</button>
-            <button class="close-modal-btn" id="closeDevBtn">Close</button>
-        </div>
-    </div>
+    <button id="themeBtn" class="icon-btn top-right-btn" aria-label="Toggle Theme"></button>
 
     <div id="tutorialModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
         <div class="modal-content">

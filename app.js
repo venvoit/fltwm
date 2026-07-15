@@ -733,43 +733,6 @@ document.addEventListener('DOMContentLoaded', () => {
         getEl('tutorialModal').classList.add('hidden'); 
     });
 
-    if(getEl('devMenuBtn')) {
-        getEl('devMenuBtn').addEventListener('click', () => {
-            getEl('devModal').classList.remove('hidden');
-        });
-    }
-
-    if(getEl('closeDevBtn')) {
-        getEl('closeDevBtn').addEventListener('click', () => {
-            getEl('devModal').classList.add('hidden');
-        });
-    }
-
-    if(getEl('devResetDayBtn')) {
-        getEl('devResetDayBtn').addEventListener('click', () => {
-            localStorage.removeItem('flippingLettersState');
-            if (userStats.lastCompletedDay === state.puzzleNumber) {
-                userStats.lastCompletedDay = -1;
-                userStats.played = Math.max(0, userStats.played - 1);
-                if (state.status === "WON") {
-                    userStats.wins = Math.max(0, userStats.wins - 1);
-                    userStats.currentStreak = Math.max(0, userStats.currentStreak - 1);
-                    if (userStats.distribution[state.currentRow] > 0) userStats.distribution[state.currentRow]--;
-                }
-                saveStats();
-            }
-            location.reload();
-        });
-    }
-
-    if(getEl('devClearStatsBtn')) {
-        getEl('devClearStatsBtn').addEventListener('click', () => {
-            localStorage.removeItem('flippingLettersStats');
-            localStorage.removeItem('flippingLettersState');
-            location.reload();
-        });
-    }
-
     document.addEventListener("keydown", (e) => {
         if(e.target.tagName === 'INPUT') return;
 
@@ -778,9 +741,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (getEl('statsModal') && !getEl('statsModal').classList.contains('hidden')) {
             if (e.key === "Enter" || e.key === "Escape") getEl('closeStatsBtn').click(); return;
-        }
-        if (getEl('devModal') && !getEl('devModal').classList.contains('hidden')) {
-            if (e.key === "Enter" || e.key === "Escape") getEl('closeDevBtn').click(); return;
         }
         
         if (e.key === "Backspace") handleBackspace();
@@ -793,31 +753,26 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // --- UPGRADED: Smart Keyboard Typing Logic ---
         if (/^[a-zA-Z]$/.test(e.key) && state.status === "PLAYING") {
             const typedChar = e.key.toLowerCase();
             
-            // Priority 1: Check if any tile is ALREADY showing the typed letter
             let targetIndex = state.bank.findIndex((item) => {
                 const visibleChar = item.isFlipped ? item.flipChar : item.char;
                 return visibleChar === typedChar; 
             });
 
-            // Priority 2: If not found, check if it's hiding on the back of a flippable tile
             if (targetIndex === -1) {
                 targetIndex = state.bank.findIndex((item) => {
                     const hiddenChar = item.isFlipped ? item.char : item.flipChar;
                     return hiddenChar === typedChar;
                 });
                 
-                // If we found it on the back, flip the tile for the user automatically!
                 if (targetIndex !== -1) {
                     state.bank[targetIndex].isFlipped = !state.bank[targetIndex].isFlipped;
                     saveGameState();
                 }
             }
 
-            // Finally, if we found it (either already showing or just flipped), add it to the board
             if (targetIndex !== -1) {
                 handleAddLetter(targetIndex); 
             }
